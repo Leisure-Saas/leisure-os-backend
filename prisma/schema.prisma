@@ -1,18 +1,73 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// MODEL 1: Untuk Properti (Villa, Yacht, dll.)
 model Property {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  price       Int
-  imageUrl    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  type              String   // Nanti bisa kita ganti jadi Enum: VILLA, YACHT
+  location          String
+  description       String?  // Tanda tanya (?) berarti opsional
+  bedrooms          Int
+  bathrooms         Int
+  maxGuests         Int
+  basePricePerNight Float
+
+  // Relasi: Properti ini dimiliki oleh satu User
+  owner             User     @relation("OwnedProperties", fields: [ownerId], references: [id])
+  ownerId           String
+
+  // Relasi: Properti ini bisa memiliki banyak Booking
+  bookings          Booking[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// MODEL 2: Untuk Pengguna (Tamu, Owner, Admin)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  role      String   // Nanti bisa kita ganti jadi Enum: GUEST, OWNER, ADMIN
+
+  // Relasi: User ini bisa memiliki banyak properti
+  ownedProperties Property[] @relation("OwnedProperties")
+
+  // Relasi: User ini (sebagai tamu) bisa memiliki banyak booking
+  bookingsAsGuest Booking[]  @relation("GuestBookings")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// MODEL 3: Untuk Pemesanan
+model Booking {
+  id             String   @id @default(cuid())
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  numberOfGuests Int
+  totalPrice     Float
+  status         String   // Nanti bisa kita ganti jadi Enum: INQUIRY, PENDING, CONFIRMED
+
+  // Relasi: Booking ini untuk satu Properti
+  property       Property @relation(fields: [propertyId], references: [id])
+  propertyId     String
+
+  // Relasi: Booking ini dibuat oleh satu User (tamu)
+  guest          User     @relation("GuestBookings", fields: [guestId], references: [id])
+  guestId        String
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
