@@ -2,7 +2,9 @@
   "name": "leisure-os-backend",
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
+"scripts": {
+  "start": "./start.sh"
+}
     "dev": "nodemon src/index.js",
     "start": "node src/app.js"
   },
