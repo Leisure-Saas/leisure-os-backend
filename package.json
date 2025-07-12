@@ -2,11 +2,10 @@
   "name": "leisure-os-backend",
   "version": "1.0.0",
   "type": "module",
-"scripts": {
-  "start": "./start.sh"
-}
-    "dev": "nodemon src/index.js",
-    "start": "node src/app.js"
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
@@ -18,9 +17,8 @@
     "nodemon": "^2.0.22",
     "prisma": "^6.11.1"
   },
-  "main": "index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "description": ""
+  "license": "ISC"
 }
+
