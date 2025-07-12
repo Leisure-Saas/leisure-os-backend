@@ -3,6 +3,6 @@
     "dockerfilePath": "./Dockerfile"
   },
   "deploy": {
-    "startCommand": "sleep 5 && npm start",
+    "startCommand": "node src/app.js"
   }
 }
