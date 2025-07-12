@@ -15,13 +15,13 @@ app.get('/', (_, res) => {
   res.send('✅ Leisure OS backend running!');
 });
 
-// Tambahkan rute fallback untuk undefined endpoints (optional)
+// Tambahkan rute fallback untuk undefined endpoints
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Jalankan server
-app.listen(PORT, () => {
+// Jalankan server dan bind ke 0.0.0.0 (wajib di Railway)
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server listening on port ${PORT}`);
 });
 
