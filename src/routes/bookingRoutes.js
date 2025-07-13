@@ -1,18 +1,20 @@
 // src/routes/bookingRoutes.js
 import express from 'express';
 
-// Impor semua fungsi yang dibutuhkan
+// Impor semua fungsi yang dibutuhkan dari controller
 import {
   createBooking,
   getAllBookings,
-  getBookingById
+  getBookingById,
+  updateBookingStatus, // <-- Impor fungsi baru
 } from '../controllers/bookingController.js';
 
 const router = express.Router();
 
-// Definisikan semua rute untuk booking
-router.get('/', getAllBookings);     // GET /api/bookings -> dapatkan semua booking
-router.get('/:id', getBookingById); // GET /api/bookings/:id -> dapatkan satu booking
-router.post('/', createBooking);      // POST /api/bookings -> buat booking baru
+// Mendefinisikan semua rute untuk booking
+router.get('/', getAllBookings);
+router.get('/:id', getBookingById);
+router.post('/', createBooking);
+router.patch('/:id', updateBookingStatus); // <-- Tambahkan rute PATCH baru
 
 export default router;
