@@ -1,12 +1,11 @@
 // src/controllers/bookingController.js
 import prisma from '../prismaClient.js';
 
-// Fungsi untuk membuat booking inquiry baru (AMAN)
+// Fungsi untuk membuat booking inquiry baru (DENGAN LOGIKA KETERSEDIAAN)
 export const createBooking = async (req, res) => {
   try {
     const {
       propertyId,
-      // guestId tidak lagi diambil dari body
       checkInDate,
       checkOutDate,
       numberOfGuests,
@@ -16,14 +15,51 @@ export const createBooking = async (req, res) => {
     // Ambil ID user (sebagai guest) dari token yang sudah diverifikasi
     const guestId = req.user.userId;
 
-    // TODO: Tambahkan logika untuk memeriksa ketersediaan properti di sini nanti.
+    // --- ▼▼▼ LOGIKA PENGECEKAN KETERSEDIAAN ▼▼▼ ---
 
+    // 1. Konversi tanggal input menjadi objek Date yang valid
+    const requestedCheckIn = new Date(checkInDate);
+    const requestedCheckOut = new Date(checkOutDate);
+
+    // 2. Cari booking lain untuk properti yang sama yang sudah dikonfirmasi dan tanggalnya bertindihan
+    const existingBooking = await prisma.booking.findFirst({
+      where: {
+        propertyId: propertyId,
+        status: 'CONFIRMED', // Hanya cek booking yang sudah dikonfirmasi
+        // Logika untuk menemukan tanggal yang bertindihan:
+        // (Tanggal Mulai Booking A <= Tanggal Selesai Booking B) DAN (Tanggal Selesai Booking A >= Tanggal Mulai Booking B)
+        AND: [
+          {
+            checkInDate: {
+              lte: requestedCheckOut, // lte = Less Than or Equal (<=)
+            },
+          },
+          {
+            checkOutDate: {
+              gte: requestedCheckIn, // gte = Greater Than or Equal (>=)
+            },
+          },
+        ],
+      },
+    });
+
+    // 3. Jika ditemukan booking yang bertindihan, kembalikan error dan jangan lanjutkan
+    if (existingBooking) {
+      return res.status(409).json({ // 409 Conflict adalah status yang tepat untuk ini
+        error: 'Konflik Jadwal',
+        message: 'Properti tidak tersedia pada rentang tanggal yang dipilih.',
+      });
+    }
+
+    // --- ▲▲▲ LOGIKA PENGECEKAN KETERSEDIAAN BERAKHIR ▲▲▲ ---
+
+    // 4. Jika tidak ada konflik, lanjutkan membuat booking baru
     const newBooking = await prisma.booking.create({
       data: {
         propertyId,
-        guestId, // Gunakan guestId dari token
-        checkInDate: new Date(checkInDate),
-        checkOutDate: new Date(checkOutDate),
+        guestId,
+        checkInDate: requestedCheckIn,
+        checkOutDate: requestedCheckOut,
         numberOfGuests,
         totalPrice,
         status: 'INQUIRY', // Status default saat dibuat
