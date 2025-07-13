@@ -10,64 +10,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==============
+// ENUMS
+// ==============
+
+enum PropertyType {
+  VILLA
+  YACHT
+  APARTMENT
+  HOUSE
+}
+
+enum UserRole {
+  GUEST
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  INQUIRY
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+
+// ==============
+// MODELS
+// ==============
+
 // MODEL 1: Untuk Properti (Villa, Yacht, dll.)
 model Property {
-  id                String   @id @default(cuid())
+  id                String       @id @default(cuid())
   name              String
-  type              String   // Nanti bisa kita ganti jadi Enum: VILLA, YACHT
+  type              PropertyType // Menggunakan Enum
   location          String
-  description       String?  // Tanda tanya (?) berarti opsional
+  description       String?
   bedrooms          Int
   bathrooms         Int
   maxGuests         Int
   basePricePerNight Float
 
   // Relasi: Properti ini dimiliki oleh satu User
-  owner             User     @relation("OwnedProperties", fields: [ownerId], references: [id])
+  owner             User         @relation("OwnerToProperties", fields: [ownerId], references: [id])
   ownerId           String
 
   // Relasi: Properti ini bisa memiliki banyak Booking
   bookings          Booking[]
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 }
 
 // MODEL 2: Untuk Pengguna (Tamu, Owner, Admin)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  phone     String?
-  role      String   // Nanti bisa kita ganti jadi Enum: GUEST, OWNER, ADMIN
+  id              String     @id @default(cuid())
+  email           String     @unique
+  name            String?
+  password        String     // Field password untuk login
+  role            UserRole   @default(GUEST) // Menggunakan Enum
 
   // Relasi: User ini bisa memiliki banyak properti
-  ownedProperties Property[] @relation("OwnedProperties")
+  ownedProperties Property[] @relation("OwnerToProperties")
 
   // Relasi: User ini (sebagai tamu) bisa memiliki banyak booking
-  bookingsAsGuest Booking[]  @relation("GuestBookings")
+  bookings        Booking[]  @relation("GuestToBookings")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 // MODEL 3: Untuk Pemesanan
 model Booking {
-  id             String   @id @default(cuid())
-  checkInDate    DateTime
-  checkOutDate   DateTime
-  numberOfGuests Int
-  totalPrice     Float
-  status         String   // Nanti bisa kita ganti jadi Enum: INQUIRY, PENDING, CONFIRMED
+  id               String        @id @default(cuid())
+  checkInDate      DateTime
+  checkOutDate     DateTime
+  numberOfGuests   Int
+  totalPrice       Float
+  status           BookingStatus @default(INQUIRY) // Menggunakan Enum
 
   // Relasi: Booking ini untuk satu Properti
-  property       Property @relation(fields: [propertyId], references: [id])
-  propertyId     String
+  property         Property      @relation(fields: [propertyId], references: [id])
+  propertyId       String
 
   // Relasi: Booking ini dibuat oleh satu User (tamu)
-  guest          User     @relation("GuestBookings", fields: [guestId], references: [id])
-  guestId        String
+  guest            User          @relation("GuestToBookings", fields: [guestId], references: [id])
+  guestId          String
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 }
