@@ -28,30 +28,20 @@ export const createBooking = async (req, res) => {
     });
 
     res.status(201).json(newBooking);
-  } catch (error)
-    {
+  } catch (error) {
     console.error("Error creating booking:", error);
     res.status(500).json({ error: "Gagal membuat booking." });
   }
 };
 
-// =======================================================
-// ▼▼▼ TAMBAHKAN DUA FUNGSI BARU DI BAWAH INI ▼▼▼
-// =======================================================
-
 // Fungsi untuk mendapatkan semua booking
 export const getAllBookings = async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({
-      // Sertakan data properti dan tamu terkait untuk info lebih lengkap
       include: {
-        property: {
-          select: { name: true, location: true }
-        },
-        guest: {
-          select: { name: true, email: true }
-        }
-      }
+        property: { select: { name: true, location: true } },
+        guest: { select: { name: true, email: true } },
+      },
     });
     res.status(200).json(bookings);
   } catch (error) {
@@ -67,9 +57,9 @@ export const getBookingById = async (req, res) => {
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
-        property: true, // Sertakan semua data properti
-        guest: true,    // Sertakan semua data tamu
-      }
+        property: true,
+        guest: true,
+      },
     });
 
     if (booking) {
@@ -80,5 +70,27 @@ export const getBookingById = async (req, res) => {
   } catch (error) {
     console.error("Error getting booking:", error);
     res.status(500).json({ error: "Gagal mendapatkan booking." });
+  }
+};
+
+// Fungsi untuk memperbarui status booking
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['INQUIRY', 'PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+      return res.status(400).json({ error: "Status tidak valid." });
+    }
+
+    const updatedBooking = await prisma.booking.update({
+      where: { id },
+      data: { status },
+    });
+
+    res.status(200).json(updatedBooking);
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ error: "Gagal memperbarui status booking." });
   }
 };
