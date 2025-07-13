@@ -1,10 +1,18 @@
 // src/routes/propertyRoutes.js
 import express from 'express';
-import { createProperty } from '../controllers/propertyController.js';
+
+// Impor semua fungsi yang dibutuhkan dari controller
+import { 
+  createProperty, 
+  getAllProperties, 
+  getPropertyById 
+} from '../controllers/propertyController.js';
 
 const router = express.Router();
 
-// Saat ada request POST ke alamat '/', jalankan fungsi createProperty
-router.post('/', createProperty);
+// Mendefinisikan semua rute untuk properti
+router.get('/', getAllProperties);       // GET /api/properties -> dapatkan semua properti
+router.get('/:id', getPropertyById);   // GET /api/properties/some-id -> dapatkan satu properti
+router.post('/', createProperty);        // POST /api/properties -> buat properti baru
 
 export default router;
