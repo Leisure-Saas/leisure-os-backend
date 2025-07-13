@@ -1,29 +1,32 @@
 // src/controllers/bookingController.js
 import prisma from '../prismaClient.js';
 
-// Fungsi untuk membuat booking inquiry baru
+// Fungsi untuk membuat booking inquiry baru (AMAN)
 export const createBooking = async (req, res) => {
   try {
     const {
       propertyId,
-      guestId,
+      // guestId tidak lagi diambil dari body
       checkInDate,
       checkOutDate,
       numberOfGuests,
       totalPrice,
     } = req.body;
 
+    // Ambil ID user (sebagai guest) dari token yang sudah diverifikasi
+    const guestId = req.user.userId;
+
     // TODO: Tambahkan logika untuk memeriksa ketersediaan properti di sini nanti.
 
     const newBooking = await prisma.booking.create({
       data: {
         propertyId,
-        guestId,
+        guestId, // Gunakan guestId dari token
         checkInDate: new Date(checkInDate),
         checkOutDate: new Date(checkOutDate),
         numberOfGuests,
         totalPrice,
-        status: 'INQUIRY',
+        status: 'INQUIRY', // Status default saat dibuat
       },
     });
 
@@ -79,7 +82,10 @@ export const updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['INQUIRY', 'PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+    // Di masa depan, kita bisa menambahkan validasi peran di sini.
+    // Misalnya, hanya OWNER atau ADMIN yang bisa mengubah status menjadi CONFIRMED.
+
+    if (!['INQUIRY', 'CONFIRMED', 'CANCELLED', 'COMPLETED'].includes(status)) {
       return res.status(400).json({ error: "Status tidak valid." });
     }
 
