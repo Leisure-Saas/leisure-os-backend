@@ -1,18 +1,16 @@
-// src/routes/propertyRoutes.js
 import express from 'express';
-
-// Impor semua fungsi yang dibutuhkan dari controller
-import { 
-  createProperty, 
-  getAllProperties, 
-  getPropertyById 
-} from '../controllers/propertyController.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authorize } from '../middleware/authorizationMiddleware.js'; // <-- Impor authorize
+import { createProperty, getAllProperties, getPropertyById } from '../controllers/propertyController.js';
 
 const router = express.Router();
 
-// Mendefinisikan semua rute untuk properti
-router.get('/', getAllProperties);       // GET /api/properties -> dapatkan semua properti
-router.get('/:id', getPropertyById);   // GET /api/properties/some-id -> dapatkan satu properti
-router.post('/', createProperty);        // POST /api/properties -> buat properti baru
+// Rute yang bisa diakses publik
+router.get('/', getAllProperties);
+router.get('/:id', getPropertyById);
+
+// Rute yang dilindungi:
+// Harus login DAN harus memiliki peran 'OWNER'
+router.post('/', authenticateToken, authorize(['OWNER']), createProperty);
 
 export default router;
