@@ -1,19 +1,40 @@
 // src/controllers/propertyController.js
 import prisma from '../prismaClient.js';
 
-// Fungsi untuk membuat properti baru
+// Fungsi untuk membuat properti baru (AMAN)
 export const createProperty = async (req, res) => {
   try {
-    // Menggunakan Prisma Client untuk menyimpan data ke database
-    // req.body sudah berisi semua data yang kita butuhkan
+    // Ambil data properti dari body request
+    const {
+      name,
+      type,
+      location,
+      description,
+      bedrooms,
+      bathrooms,
+      maxGuests,
+      basePricePerNight,
+    } = req.body;
+
+    // Ambil ID pemilik dari token yang sudah diverifikasi oleh middleware
+    const ownerId = req.user.userId;
+
     const newProperty = await prisma.property.create({
-      data: req.body,
+      data: {
+        name,
+        type,
+        location,
+        description,
+        bedrooms,
+        bathrooms,
+        maxGuests,
+        basePricePerNight,
+        ownerId, // Gunakan ownerId dari token, bukan dari body
+      },
     });
 
-    // Mengirim kembali data yang baru dibuat sebagai konfirmasi
     res.status(201).json(newProperty);
   } catch (error) {
-    // Jika terjadi error, kirim pesan error
     console.error("Error creating property:", error);
     res.status(500).json({ error: "Gagal membuat properti." });
   }
@@ -33,12 +54,11 @@ export const getAllProperties = async (req, res) => {
 // Fungsi untuk mendapatkan satu properti berdasarkan ID
 export const getPropertyById = async (req, res) => {
   try {
-    const { id } = req.params; // Mengambil ID dari URL
+    const { id } = req.params;
     const property = await prisma.property.findUnique({
       where: { id },
     });
 
-    // Jika properti ditemukan, kirim datanya. Jika tidak, kirim error 404.
     if (property) {
       res.status(200).json(property);
     } else {
