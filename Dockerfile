@@ -8,4 +8,5 @@ RUN npm install
 
 EXPOSE 3000
 
-CMD ["node", "src/app.js"]
+# Menjalankan script startup kita yang berisi migrasi dan server
+CMD ["./start.sh"]
