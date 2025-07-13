@@ -1,6 +1,7 @@
+// src/app.js
 import express from 'express';
 import dotenv from 'dotenv';
-import propertyRoutes from './routes/propertyRoutes.js'; // <-- TAMBAHKAN INI
+import propertyRoutes from './routes/propertyRoutes.js';
 
 dotenv.config();
 
@@ -9,8 +10,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// =======================================================
+// ▼▼▼ RUTE TES DIAGNOSTIK ▼▼▼
+// =======================================================
+app.get('/api/test', (req, res) => {
+  res.status(200).json({ message: "Test route is working!" });
+});
+// =======================================================
+
 // DAFTARKAN RUTE API DI SINI
-app.use('/api/properties', propertyRoutes); // <-- DAN TAMBAHKAN INI
+app.use('/api/properties', propertyRoutes);
 
 app.get('/health', (_, res) => {
   res.status(200).json({
