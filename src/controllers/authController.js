@@ -21,7 +21,7 @@ export const register = async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        role: 'OWNER', // <-- PERUBAHAN SEMENTARA UNTUK PENGUJIAN
+        role: 'GUEST', // <-- DIKEMBALIKAN KE SEMULA
       },
       // Pilih field yang ingin dikembalikan (jangan kembalikan password)
       select: {
