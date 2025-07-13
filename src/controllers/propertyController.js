@@ -4,32 +4,10 @@ import prisma from '../prismaClient.js';
 // Fungsi untuk membuat properti baru
 export const createProperty = async (req, res) => {
   try {
-    // Mengambil data dari request body yang dikirim oleh pengguna
-    const {
-      name,
-      type,
-      location,
-      description,
-      bedrooms,
-      bathrooms,
-      maxGuests,
-      basePricePerNight,
-      ownerId, // Nanti kita akan buat user owner dulu
-    } = req.body;
-
     // Menggunakan Prisma Client untuk menyimpan data ke database
+    // req.body sudah berisi semua data yang kita butuhkan
     const newProperty = await prisma.property.create({
-      data: {
-        name,
-        type,
-        location,
-        description,
-        bedrooms,
-        bathrooms,
-        maxGuests,
-        basePricePerNight,
-        ownerId,
-      },
+      data: req.body,
     });
 
     // Mengirim kembali data yang baru dibuat sebagai konfirmasi
@@ -37,6 +15,37 @@ export const createProperty = async (req, res) => {
   } catch (error) {
     // Jika terjadi error, kirim pesan error
     console.error("Error creating property:", error);
-    res.status(500).json({ error: "Failed to create property." });
+    res.status(500).json({ error: "Gagal membuat properti." });
+  }
+};
+
+// Fungsi untuk mendapatkan semua properti
+export const getAllProperties = async (req, res) => {
+  try {
+    const properties = await prisma.property.findMany();
+    res.status(200).json(properties);
+  } catch (error) {
+    console.error("Error getting properties:", error);
+    res.status(500).json({ error: "Gagal mendapatkan properti." });
+  }
+};
+
+// Fungsi untuk mendapatkan satu properti berdasarkan ID
+export const getPropertyById = async (req, res) => {
+  try {
+    const { id } = req.params; // Mengambil ID dari URL
+    const property = await prisma.property.findUnique({
+      where: { id },
+    });
+
+    // Jika properti ditemukan, kirim datanya. Jika tidak, kirim error 404.
+    if (property) {
+      res.status(200).json(property);
+    } else {
+      res.status(404).json({ error: "Properti tidak ditemukan." });
+    }
+  } catch (error) {
+    console.error("Error getting property:", error);
+    res.status(500).json({ error: "Gagal mendapatkan properti." });
   }
 };

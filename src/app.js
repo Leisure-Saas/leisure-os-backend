@@ -1,6 +1,11 @@
+// src/app.js
 import express from 'express';
 import dotenv from 'dotenv';
-import propertyRoutes from './routes/propertyRoutes.js'; // <-- TAMBAHKAN INI
+
+// Impor semua rute
+import propertyRoutes from './routes/propertyRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js'; // <-- TAMBAHKAN INI
+import authRoutes from './routes/authRoutes.js'; // <-- TAMBAHKAN INI
 
 dotenv.config();
 
@@ -9,8 +14,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// DAFTARKAN RUTE API DI SINI
-app.use('/api/properties', propertyRoutes); // <-- DAN TAMBAHKAN INI
+// DAFTARKAN SEMUA RUTE API DI SINI
+app.use('/api/auth', authRoutes); // <-- DAN TAMBAHKAN INI
+app.use('/api/properties', propertyRoutes);
+app.use('/api/bookings', bookingRoutes); // <-- DAN TAMBAHKAN INI
 
 app.get('/health', (_, res) => {
   res.status(200).json({
