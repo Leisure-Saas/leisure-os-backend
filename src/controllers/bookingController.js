@@ -1,30 +1,47 @@
+// src/controllers/bookingController.js
 import prisma from '../prismaClient.js';
 import { sendBookingConfirmationEmail } from '../services/mailService.js';
+import { createInvoice } from '../services/paymentService.js'; // <-- IMPOR FUNGSI INVOICE
 
-// Fungsi ini ADA dan diekspor
+// Fungsi untuk membuat booking dan langsung membuat invoice pembayaran
 export const createBooking = async (req, res) => {
   try {
     const { propertyId, checkInDate, checkOutDate, numberOfGuests } = req.body;
     const guestId = req.user.userId;
     const property = await prisma.property.findUnique({ where: { id: propertyId } });
     if (!property) return res.status(404).json({ error: 'Properti tidak ditemukan.' });
+
     const fromDate = new Date(checkInDate);
     const toDate = new Date(checkOutDate);
-    const timeDifference = toDate.getTime() - fromDate.getTime();
-    const numberOfNights = Math.ceil(timeDifference / (1000 * 3600 * 24));
+    const numberOfNights = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
+
     if (numberOfNights <= 0) return res.status(400).json({ error: "Tanggal check-out harus setelah tanggal check-in." });
+
     const calculatedTotalPrice = numberOfNights * property.basePricePerNight;
+
+    // Buat booking dengan status INQUIRY
     const newBooking = await prisma.booking.create({
       data: { propertyId, guestId, checkInDate: fromDate, checkOutDate: toDate, numberOfGuests, totalPrice: calculatedTotalPrice, status: 'INQUIRY' },
+      include: { guest: true, property: true } // Sertakan data relasi
     });
-    res.status(201).json(newBooking);
+    
+    // Panggil paymentService untuk membuat invoice
+    const paymentUrl = await createInvoice(newBooking);
+
+    // Kembalikan data booking DAN URL pembayaran ke client
+    res.status(201).json({
+      booking: newBooking,
+      paymentUrl: paymentUrl,
+    });
+
   } catch (error) {
     console.error("Error creating booking:", error);
     res.status(500).json({ error: "Gagal membuat booking." });
   }
 };
 
-// Fungsi ini ADA dan diekspor
+// ... (Sisa fungsi lainnya seperti getAllBookings, getBookingById, dll. tetap sama) ...
+// Fungsi untuk mendapatkan semua booking
 export const getAllBookings = async (req, res) => {
   try {
     const bookings = await prisma.booking.findMany({ include: { property: { select: { name: true, location: true } }, guest: { select: { name:true, email: true } } } });
@@ -35,7 +52,7 @@ export const getAllBookings = async (req, res) => {
   }
 };
 
-// Fungsi ini ADA dan diekspor
+// Fungsi untuk mendapatkan satu booking berdasarkan ID
 export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -51,7 +68,7 @@ export const getBookingById = async (req, res) => {
   }
 };
 
-// Fungsi ini ADA dan diekspor
+// Fungsi untuk memperbarui booking
 export const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,7 +88,7 @@ export const updateBooking = async (req, res) => {
   }
 };
 
-// Fungsi ini ADA dan diekspor
+// Fungsi untuk menghapus booking
 export const deleteBooking = async (req, res) => {
     try {
         const { id } = req.params;
