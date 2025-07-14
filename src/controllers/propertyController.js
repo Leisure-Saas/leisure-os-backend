@@ -1,4 +1,3 @@
-// src/controllers/propertyController.js
 import prisma from '../prismaClient.js';
 
 // Fungsi untuk membuat properti baru (AMAN)
@@ -67,5 +66,74 @@ export const getPropertyById = async (req, res) => {
   } catch (error) {
     console.error("Error getting property:", error);
     res.status(500).json({ error: "Gagal mendapatkan properti." });
+  }
+};
+
+// =======================================================
+// ▼▼▼ FUNGSI BARU UNTUK UPDATE & DELETE ▼▼▼
+// =======================================================
+
+// Fungsi untuk MEMPERBARUI properti
+export const updateProperty = async (req, res) => {
+  try {
+    const { id } = req.params; // ID properti dari URL
+    const userId = req.user.userId; // ID user dari token
+
+    // 1. Cari properti terlebih dahulu
+    const property = await prisma.property.findUnique({
+      where: { id },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Properti tidak ditemukan.' });
+    }
+
+    // 2. LAKUKAN PENGECEKAN KEPEMILIKAN
+    if (property.ownerId !== userId) {
+      return res.status(403).json({ error: 'Akses Ditolak: Anda bukan pemilik properti ini.' });
+    }
+
+    // 3. Jika lolos, lanjutkan proses update
+    const updatedProperty = await prisma.property.update({
+      where: { id },
+      data: req.body, // Update dengan data dari body request
+    });
+
+    res.status(200).json(updatedProperty);
+  } catch (error) {
+    console.error("Error updating property:", error);
+    res.status(500).json({ error: 'Gagal memperbarui properti.' });
+  }
+};
+
+// Fungsi untuk MENGHAPUS properti
+export const deleteProperty = async (req, res) => {
+  try {
+    const { id } = req.params; // ID properti dari URL
+    const userId = req.user.userId; // ID user dari token
+
+    // 1. Cari properti terlebih dahulu
+    const property = await prisma.property.findUnique({
+      where: { id },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Properti tidak ditemukan.' });
+    }
+
+    // 2. LAKUKAN PENGECEKAN KEPEMILIKAN
+    if (property.ownerId !== userId) {
+      return res.status(403).json({ error: 'Akses Ditolak: Anda bukan pemilik properti ini.' });
+    }
+
+    // 3. Jika lolos, lanjutkan proses delete
+    await prisma.property.delete({
+      where: { id },
+    });
+
+    res.status(200).json({ message: 'Properti berhasil dihapus.' });
+  } catch (error) {
+    console.error("Error deleting property:", error);
+    res.status(500).json({ error: 'Gagal menghapus properti.' });
   }
 };
