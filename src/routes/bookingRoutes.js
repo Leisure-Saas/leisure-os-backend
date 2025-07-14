@@ -1,12 +1,12 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
-// Impor semua fungsi yang dibutuhkan dari controller
+// Impor semua fungsi yang dibutuhkan dari controller, termasuk yang baru
 import {
   createBooking,
   getAllBookings,
   getBookingById,
-  updateBooking, // Menggantikan updateBookingStatus
+  updateBooking, // Pastikan ini yang diimpor, bukan updateBookingStatus
   deleteBooking,
 } from '../controllers/bookingController.js';
 
