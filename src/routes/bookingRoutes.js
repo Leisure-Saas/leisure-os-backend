@@ -1,4 +1,3 @@
-// src/routes/bookingRoutes.js
 import express from 'express';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
@@ -7,17 +6,29 @@ import {
   createBooking,
   getAllBookings,
   getBookingById,
-  updateBookingStatus,
+  updateBooking, // Menggantikan updateBookingStatus
+  deleteBooking,
 } from '../controllers/bookingController.js';
 
 const router = express.Router();
 
-// Rute Publik (siapa saja bisa melihat)
+// =======================================================
+// RUTE PUBLIK - Siapa saja bisa melihat data booking
+// =======================================================
 router.get('/', getAllBookings);
 router.get('/:id', getBookingById);
 
-// Rute Terproteksi (hanya user yang sudah login yang bisa mengakses)
+// =======================================================
+// RUTE TERPROTEKSI - Hanya pengguna yang login yang bisa mengakses
+// =======================================================
+
+// Membuat booking baru
 router.post('/', authenticateToken, createBooking);
-router.patch('/:id', authenticateToken, updateBookingStatus);
+
+// Memperbarui booking berdasarkan ID (lebih umum)
+router.patch('/:id', authenticateToken, updateBooking);
+
+// Menghapus booking berdasarkan ID
+router.delete('/:id', authenticateToken, deleteBooking);
 
 export default router;
