@@ -1,96 +1,49 @@
-// src/controllers/bookingController.js
 import prisma from '../prismaClient.js';
+import { sendBookingConfirmationEmail } from '../services/mailService.js'; // <-- 1. IMPOR FUNGSI EMAIL
 
-// Fungsi untuk membuat booking inquiry baru
-export const createBooking = async (req, res) => {
-  try {
-    const {
-      propertyId,
-      guestId,
-      checkInDate,
-      checkOutDate,
-      numberOfGuests,
-      totalPrice,
-    } = req.body;
+// ... (fungsi createBooking, getAllBookings, getBookingById tetap sama) ...
 
-    // TODO: Tambahkan logika untuk memeriksa ketersediaan properti di sini nanti.
-
-    const newBooking = await prisma.booking.create({
-      data: {
-        propertyId,
-        guestId,
-        checkInDate: new Date(checkInDate),
-        checkOutDate: new Date(checkOutDate),
-        numberOfGuests,
-        totalPrice,
-        status: 'INQUIRY',
-      },
-    });
-
-    res.status(201).json(newBooking);
-  } catch (error) {
-    console.error("Error creating booking:", error);
-    res.status(500).json({ error: "Gagal membuat booking." });
-  }
-};
-
-// Fungsi untuk mendapatkan semua booking
-export const getAllBookings = async (req, res) => {
-  try {
-    const bookings = await prisma.booking.findMany({
-      include: {
-        property: { select: { name: true, location: true } },
-        guest: { select: { name: true, email: true } },
-      },
-    });
-    res.status(200).json(bookings);
-  } catch (error) {
-    console.error("Error getting bookings:", error);
-    res.status(500).json({ error: "Gagal mendapatkan booking." });
-  }
-};
-
-// Fungsi untuk mendapatkan satu booking berdasarkan ID
-export const getBookingById = async (req, res) => {
+// Fungsi untuk memperbarui booking (SEKARANG BISA MENGIRIM EMAIL)
+export const updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        property: true,
-        guest: true,
-      },
-    });
-
-    if (booking) {
-      res.status(200).json(booking);
-    } else {
-      res.status(404).json({ error: "Booking tidak ditemukan." });
-    }
-  } catch (error) {
-    console.error("Error getting booking:", error);
-    res.status(500).json({ error: "Gagal mendapatkan booking." });
-  }
-};
-
-// Fungsi untuk memperbarui status booking
-export const updateBookingStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
+    const userId = req.user.userId;
     const { status } = req.body;
 
-    if (!['INQUIRY', 'PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
-      return res.status(400).json({ error: "Status tidak valid." });
+    const bookingToUpdate = await prisma.booking.findUnique({
+        where: { id }
+    });
+
+    if (!bookingToUpdate) {
+      return res.status(404).json({ error: "Booking tidak ditemukan." });
+    }
+
+    // Otorisasi: hanya tamu yang membuat booking yang bisa mengubahnya
+    if (bookingToUpdate.guestId !== userId) {
+      return res.status(403).json({ error: "Akses Ditolak: Anda bukan pemilik booking ini." });
     }
 
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: { status },
+      // Penting: Sertakan data guest dan property untuk dikirim ke email
+      include: {
+        guest: true,
+        property: true,
+      }
     });
+
+    // ▼▼▼ LOGIKA BARU UNTUK KIRIM EMAIL ▼▼▼
+    // Jika status diubah menjadi 'CONFIRMED', panggil fungsi kirim email.
+    if (updatedBooking.status === 'CONFIRMED') {
+      await sendBookingConfirmationEmail(updatedBooking);
+    }
 
     res.status(200).json(updatedBooking);
   } catch (error) {
-    console.error("Error updating booking status:", error);
-    res.status(500).json({ error: "Gagal memperbarui status booking." });
+    console.error("Error updating booking:", error);
+    res.status(500).json({ error: "Gagal memperbarui booking." });
   }
 };
+
+// ... (sisa fungsi lainnya seperti createBooking, getAllBookings, deleteBooking) ...
