@@ -1,23 +1,22 @@
 import express from 'express';
 import {
-  // Pastikan semua fungsi yang diimpor benar-benar ada di controller
+  createBooking,
   getAllBookings,
   getBookingById,
-  updateBooking, // Kita menggunakan ini, bukan updateBookingStatus
-  deleteBooking,
-  createBooking, // Fungsi ini masih ada untuk membuat booking baru
+  updateBooking,
+  deleteBooking
 } from '../controllers/bookingController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Lindungi semua rute ini, hanya user yang login yang bisa mengakses
+// Lindungi semua rute, hanya user terotentikasi yang bisa akses
 router.use(authenticateToken);
 
 router.get('/', getAllBookings);
+router.post('/', createBooking);
 router.get('/:id', getBookingById);
-router.post('/', createBooking); // Rute untuk membuat booking baru
-router.patch('/:id', updateBooking); // Rute untuk update (termasuk status)
-router.delete('/:id', deleteBooking); // Rute untuk menghapus booking
+router.patch('/:id', updateBooking);
+router.delete('/:id', deleteBooking);
 
 export default router;
