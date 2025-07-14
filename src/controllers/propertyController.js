@@ -1,22 +1,19 @@
 // src/controllers/propertyController.js
 import prisma from '../prismaClient.js';
 
-// --- FUNGSI LAINNYA (create, getById, update, delete) TETAP SAMA ---
-// ... (createProperty, getPropertyById, updateProperty, deleteProperty) ...
+// ... (kode fungsi lainnya tetap sama) ...
 
-// Fungsi untuk mendapatkan semua properti (SEKARANG DENGAN FILTER)
+// Fungsi untuk mendapatkan semua properti (SEKARANG DENGAN FILTER TANGGAL)
 export const getAllProperties = async (req, res) => {
   try {
-    // 1. Ambil query parameter dari URL
-    const { location, minGuests } = req.query;
+    // 1. Ambil SEMUA query parameter dari URL
+    const { location, minGuests, availableFrom, availableTo } = req.query;
 
     // 2. Siapkan objek 'where' untuk filter Prisma
     const where = {};
 
     // 3. Bangun objek 'where' secara dinamis
     if (location) {
-      // Jika ada filter lokasi, tambahkan ke query.
-      // 'contains' akan mencari teks, 'insensitive' berarti tidak peduli huruf besar/kecil.
       where.location = {
         contains: location,
         mode: 'insensitive',
@@ -24,17 +21,38 @@ export const getAllProperties = async (req, res) => {
     }
 
     if (minGuests) {
-      // Jika ada filter jumlah tamu, tambahkan ke query.
-      // 'gte' berarti "greater than or equal" (lebih besar atau sama dengan).
-      // Pastikan untuk mengubahnya menjadi angka (Integer).
       where.maxGuests = {
         gte: parseInt(minGuests, 10),
       };
     }
 
-    // 4. Jalankan query ke database dengan filter yang sudah dibuat
+    // ▼▼▼ LOGIKA BARU UNTUK FILTER TANGGAL ▼▼▼
+    if (availableFrom && availableTo) {
+      // Jika ada filter tanggal, tambahkan kondisi untuk mengecualikan
+      // properti yang sudah di-booking pada rentang tanggal tersebut.
+      const fromDate = new Date(availableFrom);
+      const toDate = new Date(availableTo);
+
+      where.bookings = {
+        // 'none' berarti: jangan ikutkan properti yang memiliki booking
+        // yang cocok dengan kondisi di dalam ini.
+        none: {
+          status: 'CONFIRMED', // Hanya periksa booking yang sudah dikonfirmasi
+          // Logika tumpang tindih (overlap):
+          // Sebuah booking dianggap tumpang tindih jika:
+          // Tanggal check-in nya SEBELUM tanggal check-out pencarian, DAN
+          // Tanggal check-out nya SETELAH tanggal check-in pencarian.
+          AND: [
+            { checkInDate: { lt: toDate } },
+            { checkOutDate: { gt: fromDate } },
+          ],
+        },
+      };
+    }
+
+    // 4. Jalankan query ke database dengan semua filter yang ada
     const properties = await prisma.property.findMany({
-      where: where, // Gunakan objek 'where' yang dinamis di sini
+      where: where,
     });
 
     res.status(200).json(properties);
@@ -45,8 +63,8 @@ export const getAllProperties = async (req, res) => {
 };
 
 
-// --- KODE FUNGSI LAINNYA DI BAWAH INI ---
-
+// --- FUNGSI LAINNYA DI BAWAH INI (createProperty, getPropertyById, dll.) ---
+// ... (Salin sisa fungsi dari versi sebelumnya) ...
 // Fungsi untuk membuat properti baru (AMAN)
 export const createProperty = async (req, res) => {
   try {
