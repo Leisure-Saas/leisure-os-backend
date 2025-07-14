@@ -1,6 +1,7 @@
+// src/controllers/bookingController.js
 import prisma from '../prismaClient.js';
 
-// Fungsi untuk membuat booking inquiry baru (dengan cek ketersediaan)
+// Fungsi untuk membuat booking (SEKARANG DENGAN KALKULASI HARGA OTOMATIS)
 export const createBooking = async (req, res) => {
   try {
     const {
@@ -8,40 +9,65 @@ export const createBooking = async (req, res) => {
       checkInDate,
       checkOutDate,
       numberOfGuests,
-      totalPrice,
+      // totalPrice tidak lagi diterima dari client
     } = req.body;
 
     const guestId = req.user.userId;
 
-    const requestedCheckIn = new Date(checkInDate);
-    const requestedCheckOut = new Date(checkOutDate);
+    // --- LOGIKA KALKULASI HARGA ---
 
+    // 1. Ambil data properti untuk mendapatkan harga per malam
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Properti tidak ditemukan.' });
+    }
+
+    // 2. Hitung jumlah malam
+    const fromDate = new Date(checkInDate);
+    const toDate = new Date(checkOutDate);
+    const timeDifference = toDate.getTime() - fromDate.getTime();
+    const numberOfNights = Math.ceil(timeDifference / (1000 * 3600 * 24));
+
+    if (numberOfNights <= 0) {
+      return res.status(400).json({ error: "Tanggal check-out harus setelah tanggal check-in." });
+    }
+
+    // 3. Hitung total harga
+    const calculatedTotalPrice = numberOfNights * property.basePricePerNight;
+
+    // --- AKHIR LOGIKA KALKULASI HARGA ---
+
+    // Cek ketersediaan (logika ini tetap sama)
     const existingBooking = await prisma.booking.findFirst({
       where: {
-        propertyId: propertyId,
+        propertyId,
         status: 'CONFIRMED',
         AND: [
-          { checkInDate: { lte: requestedCheckOut } },
-          { checkOutDate: { gte: requestedCheckIn } },
+          { checkInDate: { lt: toDate } },
+          { checkOutDate: { gt: fromDate } },
         ],
       },
     });
 
     if (existingBooking) {
       return res.status(409).json({
-        error: 'Konflik Jadwal',
-        message: 'Properti tidak tersedia pada rentang tanggal yang dipilih.',
+        error: "Konflik Jadwal",
+        message: "Properti tidak tersedia pada rentang tanggal yang dipilih.",
       });
     }
 
+    // Buat booking baru dengan harga yang sudah dihitung server
     const newBooking = await prisma.booking.create({
       data: {
         propertyId,
         guestId,
-        checkInDate: requestedCheckIn,
-        checkOutDate: requestedCheckOut,
+        checkInDate: fromDate,
+        checkOutDate: toDate,
         numberOfGuests,
-        totalPrice,
+        totalPrice: calculatedTotalPrice, // Gunakan harga dari server
         status: 'INQUIRY',
       },
     });
@@ -53,6 +79,9 @@ export const createBooking = async (req, res) => {
   }
 };
 
+
+// --- FUNGSI LAINNYA DI BAWAH INI (getAllBookings, getBookingById, dll) ---
+// ... (Salin sisa fungsi dari versi sebelumnya) ...
 // Fungsi untuk mendapatkan semua booking
 export const getAllBookings = async (req, res) => {
   try {
@@ -92,71 +121,56 @@ export const getBookingById = async (req, res) => {
   }
 };
 
-// =======================================================
-// ▼▼▼ FUNGSI BARU UNTUK UPDATE & DELETE BOOKING ▼▼▼
-// =======================================================
-
-// Fungsi untuk MEMPERBARUI booking
+// Fungsi untuk memperbarui booking (AMAN)
 export const updateBooking = async (req, res) => {
   try {
-    const { id } = req.params; // ID booking dari URL
-    const userId = req.user.userId; // ID user dari token
+    const { id } = req.params;
+    const userId = req.user.userId;
 
-    // 1. Cari booking terlebih dahulu
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-    });
+    const bookingToUpdate = await prisma.booking.findUnique({ where: { id } });
 
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking tidak ditemukan.' });
+    if (!bookingToUpdate) {
+      return res.status(404).json({ error: "Booking tidak ditemukan." });
     }
 
-    // 2. Lakukan pengecekan kepemilikan
-    if (booking.guestId !== userId) {
-      return res.status(403).json({ error: 'Akses Ditolak: Anda bukan pemilik booking ini.' });
+    if (bookingToUpdate.guestId !== userId) {
+      return res.status(403).json({ error: "Akses Ditolak: Anda bukan pemilik booking ini." });
     }
 
-    // 3. Jika lolos, lanjutkan proses update
+    // For now, let's only allow updating status and guests. Price is fixed.
+    const { status, numberOfGuests } = req.body;
     const updatedBooking = await prisma.booking.update({
       where: { id },
-      data: req.body,
+      data: { status, numberOfGuests },
     });
 
     res.status(200).json(updatedBooking);
   } catch (error) {
     console.error("Error updating booking:", error);
-    res.status(500).json({ error: 'Gagal memperbarui booking.' });
+    res.status(500).json({ error: "Gagal memperbarui booking." });
   }
 };
 
-// Fungsi untuk MENGHAPUS booking
+// Fungsi untuk menghapus booking (AMAN)
 export const deleteBooking = async (req, res) => {
   try {
-    const { id } = req.params; // ID booking dari URL
-    const userId = req.user.userId; // ID user dari token
+    const { id } = req.params;
+    const userId = req.user.userId;
 
-    // 1. Cari booking terlebih dahulu
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-    });
+    const bookingToDelete = await prisma.booking.findUnique({ where: { id } });
 
-    if (!booking) {
-      return res.status(404).json({ error: 'Booking tidak ditemukan.' });
+    if (!bookingToDelete) {
+      return res.status(404).json({ error: "Booking tidak ditemukan." });
     }
 
-    // 2. Lakukan pengecekan kepemilikan
-    if (booking.guestId !== userId) {
-      return res.status(403).json({ error: 'Akses Ditolak: Anda bukan pemilik booking ini.' });
+    if (bookingToDelete.guestId !== userId) {
+      return res.status(403).json({ error: "Akses Ditolak: Anda bukan pemilik booking ini." });
     }
 
-    // 3. Jika lolos, lanjutkan proses delete
-    await prisma.booking.delete({
-      where: { id },
-    });
-
-    res.status(200).json({ message: 'Booking berhasil dihapus.' });
+    await prisma.booking.delete({ where: { id } });
+    res.status(200).json({ message: "Booking berhasil dihapus." });
   } catch (error) {
     console.error("Error deleting booking:", error);
-    res.status(500).json({ error: 'Gagal menghapus booking.' });
+    res.status(500).json({ error: "Gagal menghapus booking." });
   }
 };
