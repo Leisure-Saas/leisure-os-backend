@@ -7,7 +7,8 @@ import {
   deleteProperty
 } from '../controllers/propertyController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { authorizeOwner } from '../middleware/authorizationMiddleware.js';
+// ▼▼▼ UBAH DI SINI: Impor 'authorize', bukan 'authorizeOwner' ▼▼▼
+import { authorize } from '../middleware/authorizationMiddleware.js';
 
 const router = express.Router();
 
@@ -15,9 +16,10 @@ const router = express.Router();
 router.get('/', getAllProperties);
 router.get('/:id', getPropertyById);
 
+// ▼▼▼ UBAH DI SINI: Gunakan authorize(['OWNER']) untuk melindungi rute ▼▼▼
 // Rute yang hanya bisa diakses oleh user yang login & memiliki peran OWNER
-router.post('/', authenticateToken, authorizeOwner, createProperty);
-router.patch('/:id', authenticateToken, authorizeOwner, updateProperty);
-router.delete('/:id', authenticateToken, authorizeOwner, deleteProperty);
+router.post('/', authenticateToken, authorize(['OWNER']), createProperty);
+router.patch('/:id', authenticateToken, authorize(['OWNER']), updateProperty);
+router.delete('/:id', authenticateToken, authorize(['OWNER']), deleteProperty);
 
 export default router;
