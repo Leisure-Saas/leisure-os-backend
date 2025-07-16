@@ -1,27 +1,9 @@
-import { Request, Response } from 'express';
-// PENTING: Tambahkan .js di akhir path impor untuk modul lokal
+// (import statements tetap sama)
+// ...
 import { aiPricingService } from '../../services/aiPricingService.js';
 import { SuggestPriceRequest, SuggestPriceResponse } from './rules.types.js';
 
-// ===================================================
-// FUNGSI-FUNGSI LAMA ANDA (sebagai placeholder agar tidak error)
-// Silakan isi kembali logika Anda di sini jika sebelumnya ada.
-// ===================================================
-
-export const createRule = async (req: Request, res: Response) => {
-  // TODO: Implement your logic for creating a rule
-  res.status(501).json({ message: 'Create rule endpoint not implemented yet.' });
-};
-
-export const getAllRules = async (req: Request, res: Response) => {
-  // TODO: Implement your logic for getting all rules
-  res.status(501).json({ message: 'Get all rules endpoint not implemented yet.' });
-};
-
-
-// ===================================================
-// HANDLER BARU UNTUK AI PRICE SUGGESTION
-// ===================================================
+// ... (fungsi placeholder Anda yang lain)
 
 export const suggestPriceHandler = async (req: Request, res: Response) => {
   try {
@@ -32,13 +14,17 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
 
     console.log("Controller received request for AI suggestion:", input);
 
+    // BARU: Teruskan minPrice dan maxPrice ke service
     const suggestionResult = await aiPricingService.getSuggestion({
       propertyId: input.propertyId,
       startDate: new Date(input.startDate),
       endDate: new Date(input.endDate),
+      minPrice: input.minPrice, // Akan undefined jika tidak ada, dan itu tidak masalah
+      maxPrice: input.maxPrice, // Akan undefined jika tidak ada, dan itu tidak masalah
     });
 
     const response: SuggestPriceResponse = {
+      // ... (sisa respons tetap sama)
       suggestedPrice: suggestionResult.suggestedPrice,
       currency: 'USD',
       reasoning: suggestionResult.reasoning,
@@ -48,7 +34,12 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
     return res.status(200).json(response);
 
   } catch (error) {
+    // ... (error handling tetap sama)
     console.error("Error in suggestPriceHandler:", error);
+    // Tambahkan penanganan untuk error spesifik dari service
+    if (error instanceof Error && error.message.includes("minPrice")) {
+      return res.status(400).json({ message: error.message });
+    }
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
