@@ -1,18 +1,18 @@
 import express from 'express';
-// PENTING: Impor semua handler yang dibutuhkan dengan ekstensi .js
+// Impor semua handler yang kita ekspor dari controller
 import { 
-  createRule, 
   getAllRules, 
+  createRule, 
   suggestPriceHandler 
 } from './rules.controller.js';
 
 const router = express.Router();
 
-// Route-route yang sudah ada sebelumnya
+// Route untuk fungsionalitas CRUD Rules
 router.get('/', getAllRules);
 router.post('/', createRule);
 
-// Route baru untuk AI Price Suggestion
+// Route baru untuk fitur AI
 router.post('/suggest-price', suggestPriceHandler);
 
 
