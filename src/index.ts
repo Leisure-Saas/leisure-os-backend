@@ -8,7 +8,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
-
 app.use('/api/v1/host/properties/:propertyId/rules', rulesRouter);
 
 app.get('/', (req, res) => {
