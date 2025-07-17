@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// file: prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,93 +8,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==============
-// ENUMS
-// ==============
-
-enum PropertyType {
-  VILLA
-  YACHT
-  APARTMENT
-  HOUSE
-}
-
-enum UserRole {
-  GUEST
-  OWNER
-  ADMIN
-}
-
-enum BookingStatus {
-  INQUIRY
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-
-// ==============
-// MODELS
-// ==============
-
-// MODEL 1: Untuk Properti (Villa, Yacht, dll.)
 model Property {
-  id                String       @id @default(cuid())
-  name              String
-  type              PropertyType // Menggunakan Enum
-  location          String
-  description       String?
-  bedrooms          Int
-  bathrooms         Int
-  maxGuests         Int
-  basePricePerNight Float
-
-  // Relasi: Properti ini dimiliki oleh satu User
-  owner             User         @relation("OwnerToProperties", fields: [ownerId], references: [id])
-  ownerId           String
-
-  // Relasi: Properti ini bisa memiliki banyak Booking
-  bookings          Booking[]
-
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  id                   Int      @id @default(autoincrement())
+  name                 String
+  base_price_per_night Decimal  @db.Decimal(12, 2)
+  pricingRules         PricingRule[]
+  priceOverrides       PriceOverride[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
-// MODEL 2: Untuk Pengguna (Tamu, Owner, Admin)
-model User {
-  id              String     @id @default(cuid())
-  email           String     @unique
-  name            String?
-  password        String     // Field password untuk login
-  role            UserRole   @default(GUEST) // Menggunakan Enum
-
-  // Relasi: User ini bisa memiliki banyak properti
-  ownedProperties Property[] @relation("OwnerToProperties")
-
-  // Relasi: User ini (sebagai tamu) bisa memiliki banyak booking
-  bookings        Booking[]  @relation("GuestToBookings")
-
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+model PricingRule {
+  id            Int      @id @default(autoincrement())
+  propertyId    Int
+  name          String
+  start_date    DateTime @db.Date
+  end_date      DateTime @db.Date
+  min_price     Decimal  @db.Decimal(12, 2)
+  max_price     Decimal  @db.Decimal(12, 2)
+  default_price Decimal  @db.Decimal(12, 2)
+  property      Property @relation(fields: [propertyId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-// MODEL 3: Untuk Pemesanan
-model Booking {
-  id               String        @id @default(cuid())
-  checkInDate      DateTime
-  checkOutDate     DateTime
-  numberOfGuests   Int
-  totalPrice       Float
-  status           BookingStatus @default(INQUIRY) // Menggunakan Enum
-
-  // Relasi: Booking ini untuk satu Properti
-  property         Property      @relation(fields: [propertyId], references: [id])
-  propertyId       String
-
-  // Relasi: Booking ini dibuat oleh satu User (tamu)
-  guest            User          @relation("GuestToBookings", fields: [guestId], references: [id])
-  guestId          String
-
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+model PriceOverride {
+  id            Int      @id @default(autoincrement())
+  propertyId    Int
+  override_date DateTime @db.Date
+  price         Decimal  @db.Decimal(12, 2)
+  property      Property @relation(fields: [propertyId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@unique([propertyId, override_date])
 }
