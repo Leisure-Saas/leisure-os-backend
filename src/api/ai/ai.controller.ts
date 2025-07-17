@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { aiRoutingService } from "../../services/aiRoutingService";
+// PERBAIKAN: Tambahkan .js di akhir path import
+import { aiRoutingService } from "../../services/aiRoutingService.js";
 
 export const routeTaskController = async (req: Request, res: Response) => {
     try {
