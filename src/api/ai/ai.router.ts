@@ -1,5 +1,4 @@
 import { Router } from "express";
-// PERBAIKAN: Tambahkan .js di akhir path import
 import { routeTaskController } from "./ai.controller.js";
 
 const aiRouter = Router();
