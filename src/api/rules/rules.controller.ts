@@ -2,39 +2,35 @@ import { Request, Response } from 'express';
 import { aiPricingService } from '../../services/aiPricingService.js';
 import { SuggestPriceRequest, SuggestPriceResponse } from './rules.types.js';
 
-// =============================================================
-// PENTING: JANGAN HAPUS FUNGSI-FUNGSI DI BAWAH INI
-// Ini adalah placeholder agar file routes.ts tidak error.
-// Silakan isi kembali dengan logika Anda yang sebelumnya.
-// =============================================================
-
+// Fungsi placeholder Anda (tetap sama)
 export const createRule = async (req: Request, res: Response) => {
-  console.log("Endpoint 'createRule' dipanggil.");
-  // TODO: Tambahkan logika Anda untuk membuat rule baru di sini.
   res.status(501).json({ message: 'Create rule endpoint not implemented yet.' });
 };
-
 export const getAllRules = async (req: Request, res: Response) => {
-  console.log("Endpoint 'getAllRules' dipanggil.");
-  // TODO: Tambahkan logika Anda untuk mengambil semua rule di sini.
   res.status(501).json({ message: 'Get all rules endpoint not implemented yet.' });
 };
 
 
-// =============================================================
-// HANDLER BARU UNTUK AI PRICE SUGGESTION
-// =============================================================
-
+// HANDLER DENGAN LOGGING LENGKAP
 export const suggestPriceHandler = async (req: Request, res: Response) => {
+  // LOG #1: Memastikan request masuk ke handler ini
+  console.log("--- [START] AI Suggestion Request Received ---");
+
   try {
-    // FIX: Menggunakan 'as' untuk memberitahu TypeScript tipe dari req.body
+    // LOG #2: Menampilkan isi body yang dikirim oleh frontend
+    console.log("Request Body Received:", JSON.stringify(req.body, null, 2));
+
     const input = req.body as SuggestPriceRequest;
 
+    // LOG #3: Memeriksa validasi input
     if (!input.propertyId || !input.startDate || !input.endDate) {
-      return res.status(400).json({ message: "Missing required fields: propertyId, startDate, endDate" });
+      console.log("--> Validation FAILED: Missing required fields.");
+      return res.status(400).json({ message: "Missing required fields" });
     }
+    console.log("--> Validation PASSED.");
 
-    console.log("Controller received request for AI suggestion:", input);
+    // LOG #4: Tepat sebelum memanggil service AI
+    console.log("--> Calling AI Pricing Service...");
 
     const suggestionResult = await aiPricingService.getSuggestion({
       propertyId: input.propertyId,
@@ -44,6 +40,9 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
       maxPrice: input.maxPrice,
     });
 
+    // LOG #5: Tepat setelah service AI berhasil merespons
+    console.log("--> AI Service Responded Successfully.");
+
     const response: SuggestPriceResponse = {
       suggestedPrice: suggestionResult.suggestedPrice,
       currency: 'USD',
@@ -51,13 +50,13 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
       confidenceScore: suggestionResult.confidenceScore,
     };
 
+    // LOG #6: Sebelum mengirim respons sukses ke klien
+    console.log("--- [SUCCESS] Sending 200 OK response to client. ---");
     return res.status(200).json(response);
 
   } catch (error) {
-    console.error("Error in suggestPriceHandler:", error);
-    if (error instanceof Error && error.message.includes("minPrice")) {
-      return res.status(400).json({ message: error.message });
-    }
-    return res.status(500).json({ message: "Internal Server Error" });
+    // LOG #7: Jika ada error yang tertangkap di dalam blok try
+    console.error("!!! [CRITICAL ERROR] in suggestPriceHandler:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
