@@ -11,27 +11,21 @@ export const getAllRules = async (req: Request, res: Response) => {
 };
 
 
-// HANDLER DENGAN LOGGING LENGKAP
+// HANDLER DENGAN LOGGING DAN TYPE-SAFETY LENGKAP
 export const suggestPriceHandler = async (req: Request, res: Response) => {
-  // LOG #1: Memastikan request masuk ke handler ini
   console.log("--- [START] AI Suggestion Request Received ---");
 
   try {
-    // LOG #2: Menampilkan isi body yang dikirim oleh frontend
     console.log("Request Body Received:", JSON.stringify(req.body, null, 2));
-
     const input = req.body as SuggestPriceRequest;
 
-    // LOG #3: Memeriksa validasi input
     if (!input.propertyId || !input.startDate || !input.endDate) {
       console.log("--> Validation FAILED: Missing required fields.");
       return res.status(400).json({ message: "Missing required fields" });
     }
     console.log("--> Validation PASSED.");
 
-    // LOG #4: Tepat sebelum memanggil service AI
     console.log("--> Calling AI Pricing Service...");
-
     const suggestionResult = await aiPricingService.getSuggestion({
       propertyId: input.propertyId,
       startDate: new Date(input.startDate),
@@ -39,8 +33,6 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
       minPrice: input.minPrice,
       maxPrice: input.maxPrice,
     });
-
-    // LOG #5: Tepat setelah service AI berhasil merespons
     console.log("--> AI Service Responded Successfully.");
 
     const response: SuggestPriceResponse = {
@@ -50,13 +42,19 @@ export const suggestPriceHandler = async (req: Request, res: Response) => {
       confidenceScore: suggestionResult.confidenceScore,
     };
 
-    // LOG #6: Sebelum mengirim respons sukses ke klien
     console.log("--- [SUCCESS] Sending 200 OK response to client. ---");
     return res.status(200).json(response);
 
   } catch (error) {
-    // LOG #7: Jika ada error yang tertangkap di dalam blok try
+    // --- BAGIAN YANG DIPERBAIKI ---
     console.error("!!! [CRITICAL ERROR] in suggestPriceHandler:", error);
-    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    
+    // Lakukan pengecekan tipe sebelum mengakses .message
+    if (error instanceof Error) {
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+    
+    // Jika bukan object Error, kirim pesan umum
+    return res.status(500).json({ message: "An unknown internal server error occurred." });
   }
 };
