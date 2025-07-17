@@ -1,19 +1,19 @@
-import { VertexAI } from '@google-cloud/vertexai';
+import { VertexAI, HarmCategory, HarmBlockThreshold } from '@google-cloud/vertexai'; // 1. IMPOR ENUM DI SINI
 
-// Inisialisasi Klien Vertex AI
-// Kode ini akan membaca kredensial dari Environment Variables yang Anda set di Render
+// Inisialisasi Klien Vertex AI (kode ini tetap sama)
 const authOptions = process.env.GOOGLE_CREDENTIALS_JSON
     ? { credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON) }
     : {};
 
 const vertex_ai = new VertexAI({
-    project: process.env.GOOGLE_PROJECT_ID || 'the-luxury-leisure', // Mengambil dari env
+    project: process.env.GOOGLE_PROJECT_ID || 'the-luxury-leisure',
     location: 'asia-southeast1',
     ...authOptions
 });
 
 const model = 'gemini-1.5-flash-001';
 
+// 2. GUNAKAN ENUM DI SAFETY SETTINGS
 const generativeModel = vertex_ai.preview.getGenerativeModel({
     model: model,
     generationConfig: {
@@ -21,11 +21,11 @@ const generativeModel = vertex_ai.preview.getGenerativeModel({
         'temperature': 0.5,
         'topP': 1,
     },
-    safetySettings: [
-        { 'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_MEDIUM_AND_ABOVE' },
-        { 'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_MEDIUM_AND_ABOVE' },
-        { 'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_MEDIUM_AND_ABOVE' },
-        { 'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_MEDIUM_AND_ABOVE' }
+    safetySettings: [ // <-- BAGIAN YANG DIPERBAIKI
+        { 'category': HarmCategory.HARM_CATEGORY_HATE_SPEECH, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { 'category': HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { 'category': HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+        { 'category': HarmCategory.HARM_CATEGORY_HARASSMENT, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE }
     ],
 });
 
@@ -44,9 +44,9 @@ interface PriceSuggestionOutput {
   confidenceScore: number;
 }
 
+// --- Class Service (logika prompt & pemanggilan tetap sama) ---
 class AIPricingService {
   constructor() {
-    // Pesan ini akan berubah setelah Anda deploy kode baru
     console.log("AI Pricing Service Initialized (REAL AI MODE - Google Gemini)");
   }
 
