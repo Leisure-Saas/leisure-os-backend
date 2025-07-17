@@ -1,27 +1,20 @@
-import { VertexAI, HarmCategory, HarmBlockThreshold } from '@google-cloud/vertexai'; // 1. IMPOR ENUM DI SINI
+import { VertexAI, HarmCategory, HarmBlockThreshold } from '@google-cloud/vertexai';
 
-// Inisialisasi Klien Vertex AI (kode ini tetap sama)
-const authOptions = process.env.GOOGLE_CREDENTIALS_JSON
-    ? { credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON) }
-    : {};
-
+// Inisialisasi Klien Vertex AI yang sudah disederhanakan
 const vertex_ai = new VertexAI({
     project: process.env.GOOGLE_PROJECT_ID || 'the-luxury-leisure',
     location: 'us-central1',
-    ...authOptions
 });
 
-const model = 'gemini-1.5-flash-001';
-
-// 2. GUNAKAN ENUM DI SAFETY SETTINGS
-const generativeModel = vertex_ai.preview.getGenerativeModel({
-    model: model,
+// Konfigurasi model dan safety settings
+const generativeModel = vertex_ai.getGenerativeModel({ // <-- .preview dihapus
+    model: 'gemini-pro',
     generationConfig: {
         'maxOutputTokens': 2048,
         'temperature': 0.5,
         'topP': 1,
     },
-    safetySettings: [ // <-- BAGIAN YANG DIPERBAIKI
+    safetySettings: [
         { 'category': HarmCategory.HARM_CATEGORY_HATE_SPEECH, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
         { 'category': HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
         { 'category': HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, 'threshold': HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
@@ -29,7 +22,7 @@ const generativeModel = vertex_ai.preview.getGenerativeModel({
     ],
 });
 
-// --- Definisi Tipe Data (tetap sama) ---
+// --- Definisi Tipe Data (tidak ada perubahan) ---
 interface PriceSuggestionInput {
   propertyId: string;
   startDate: Date;
@@ -44,7 +37,7 @@ interface PriceSuggestionOutput {
   confidenceScore: number;
 }
 
-// --- Class Service (logika prompt & pemanggilan tetap sama) ---
+// --- Class Service (tidak ada perubahan) ---
 class AIPricingService {
   constructor() {
     console.log("AI Pricing Service Initialized (REAL AI MODE - Google Gemini)");
@@ -74,7 +67,7 @@ class AIPricingService {
 
     const req = { contents: [{ role: 'user', parts: [{ text: prompt }] }] };
     const result = await generativeModel.generateContent(req);
-    
+   
     const responseText = result.response.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!responseText) {
       throw new Error("Gemini did not return a valid response.");
