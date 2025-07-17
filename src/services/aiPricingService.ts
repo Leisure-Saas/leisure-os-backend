@@ -7,7 +7,7 @@ const authOptions = process.env.GOOGLE_CREDENTIALS_JSON
 
 const vertex_ai = new VertexAI({
     project: process.env.GOOGLE_PROJECT_ID || 'the-luxury-leisure',
-    location: 'asia-southeast1',
+    location: 'us-central1',
     ...authOptions
 });
 
