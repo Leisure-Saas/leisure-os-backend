@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-// PERBAIKAN: Tambahkan .js di akhir path import
 import { aiRoutingService } from "../../services/aiRoutingService.js";
 
 export const routeTaskController = async (req: Request, res: Response) => {
@@ -11,11 +10,10 @@ export const routeTaskController = async (req: Request, res: Response) => {
         }
 
         const result = await aiRoutingService.handleTask(task_type, payload);
-
         return res.status(200).json(result);
+
     } catch (error) {
         console.error("Error in AI task routing:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
- 
