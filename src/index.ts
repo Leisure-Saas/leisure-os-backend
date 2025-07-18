@@ -4,30 +4,29 @@ import cors, { CorsOptions } from 'cors';
 
 // Impor router Anda
 import aiRouter from './api/ai/ai.router.js';
-import orchestratorRouter from './api/orchestrator/orchestrator.router.js'; // <-- 1. Impor router baru
+import orchestratorRouter from './api/orchestrator/orchestrator.router.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 10000;
 
+// --- KONFIGURASI CORS YANG DIPERBARUI DAN LEBIH ANDAL ---
 const allowedOrigins = ['https://sensible-way-658975.framer.app'];
+
+// PERBAIKAN: Kita sederhanakan agar library cors menangani semua kasus secara otomatis
 const corsOptions: CorsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
+  origin: allowedOrigins
 };
+
 app.use(cors(corsOptions));
+// ----------------------------------------------------
 
 app.use(express.json());
 
 // Gunakan router-router Anda
 app.use('/api/v1/ai', aiRouter);
-app.use('/api/v1/orchestrator', orchestratorRouter); // <-- 2. Daftarkan router baru
+app.use('/api/v1/orchestrator', orchestratorRouter);
 
 app.listen(port, () => {
     console.log(`Server is running on http://0.0.0.0:${port}`);
